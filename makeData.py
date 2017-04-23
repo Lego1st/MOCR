@@ -6,6 +6,9 @@ from scipy import ndimage
 from six.moves import cPickle as pickle
 import argparse
 parser = argparse.ArgumentParser()
+parser.add_argument("-root", help="root folder")
+parser.add_argument("-train_fol", help="train folder")
+parser.add_argument("-test_fol", help="test folder")
 parser.add_argument("-size", help="image size")
 parser.add_argument("-channel", help="image channels")
 parser.add_argument("-train", help="train size")
@@ -17,14 +20,14 @@ parser.add_argument("-min_test", help="min number of testing")
 
 args = parser.parse_args()
 
-data_root = '/home/tailongnguyen/MOCR_test/' # Change me to store data elsewhere 
+data_root = args.root # Change me to store data elsewhere 
 def get_fols(root):
 	l = os.listdir(root)
 	l = [root + "/" + x for x in l]
 	return l
 
-train_folders = get_fols('/home/tailongnguyen/MOCR_test/train')
-test_folders =get_fols('/home/tailongnguyen/MOCR_test/test')
+train_folders = get_fols(args.train_fol)
+test_folders =get_fols(args.test_fol)
 
 print "train_folders: ", train_folders
 print "test_folders: ", test_folders
