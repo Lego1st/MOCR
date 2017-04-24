@@ -14,8 +14,8 @@ parser.add_argument("-channel", help="image channels")
 parser.add_argument("-train", help="train size")
 parser.add_argument("-valid", help="valid size")
 parser.add_argument("-test", help="test size")
-parser.add_argument("-min_train", help="min number of training")
-parser.add_argument("-min_test", help="min number of testing")
+parser.add_argument("-min_train", help="min number of training per class")
+parser.add_argument("-min_test", help="min number of testing per class")
 
 
 args = parser.parse_args()
@@ -140,7 +140,8 @@ valid_dataset, valid_labels, train_dataset, train_labels = merge_datasets(
 _, _, test_dataset, test_labels = merge_datasets(test_datasets, test_size)
 
 print('Training:', train_dataset.shape, train_labels.shape)
-print('Validation:', valid_dataset.shape, valid_labels.shape)
+if valid_size != 0:
+	print('Validation:', valid_dataset.shape, valid_labels.shape)
 print('Testing:', test_dataset.shape, test_labels.shape)
 def randomize(dataset, labels):
   permutation = np.random.permutation(labels.shape[0])
@@ -149,7 +150,8 @@ def randomize(dataset, labels):
   return shuffled_dataset, shuffled_labels
 train_dataset, train_labels = randomize(train_dataset, train_labels)
 test_dataset, test_labels = randomize(test_dataset, test_labels)
-valid_dataset, valid_labels = randomize(valid_dataset, valid_labels)
+if valid_size != 0:
+	valid_dataset, valid_labels = randomize(valid_dataset, valid_labels)
 pickle_file = os.path.join(data_root, 'mocr.pickle')
 
 try:
