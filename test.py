@@ -1,8 +1,8 @@
-from sklearn.cluster import MiniBatchKMeans
 import numpy as np
 import argparse
 import cv2
 import math
+import color_quantization as CQ 
 
 ap = argparse.ArgumentParser()
 ap.add_argument("-i", "--image", required = True, help = "Path to the image")
@@ -13,27 +13,6 @@ ap.add_argument("-c", "--clusters", required = True, type = int,
 args = vars(ap.parse_args())
 
 
-def color_quantization(args, image):
-	"""
-		Input: initial image
-		Output: image with # (= # of clusters) colors 
-	"""
-	(h, w) = image.shape[:2]
-	 
-	image = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
-	 
-	image = image.reshape((image.shape[0] * image.shape[1], 3))
-	 
-	clt = MiniBatchKMeans(n_clusters = args["clusters"])
-	labels = clt.fit_predict(image)
-	quant = clt.cluster_centers_.astype("uint8")[labels]
-	 
-	quant = quant.reshape((h, w, 3))
-	image = image.reshape((h, w, 3))
-	 
-	quant = cv2.cvtColor(quant, cv2.COLOR_LAB2BGR)
-	image = cv2.cvtColor(image, cv2.COLOR_LAB2BGR)
-	return quant	
  
 BG_COLOR = 255
 FG_COLOR = 0
@@ -58,18 +37,15 @@ class CC:
 	def centroid(self):
 		return int((self.leftmost + self.rightmost)/2), int((self.upmost + self.downmost)/2)
 
-	def add(self, items):
-		for item in items:
-			if item in self.components:
-				continue
-			if not self.components:
-				self.rightmost = self.leftmost = item[0]
-				self.upmost = self.downmost = item[1]
-			self.rightmost = max(self.rightmost, item[0])
-			self.leftmost = min(self.leftmost, item[0])
-			self.upmost = min(self.upmost, item[1])
-			self.downmost = max(self.downmost, item[1])
-			self.components.append(item)
+	def add(self, item):
+		if not self.components:
+			self.rightmost = self.leftmost = item[0]
+			self.upmost = self.downmost = item[1]
+		self.rightmost = max(self.rightmost, item[0])
+		self.leftmost = min(self.leftmost, item[0])
+		self.upmost = min(self.upmost, item[1])
+		self.downmost = max(self.downmost, item[1])
+		self.components.append(item)
 
 	def resize(self):
 		self.beforeExpandSize = self.bound_size()
@@ -102,14 +78,10 @@ def passTest(img, isBG, idCC, x, y, max_size_ratio, max_curvature_ratio):
 						passExpandabilityTest = True
 	passConnectivityTest = len(chars) >= 1 and len(chars) <= 2
 	if(len(chars) > 0):
-		CCs[chars[-1]].add([(x, y)])
+		CCs[chars[-1]].add((x, y))
 	if len(chars) == 2:
 		sizeRation = max(CCs[chars[0]].beforeExpandSize, CCs[chars[1]].beforeExpandSize) \
 					/ min(CCs[chars[0]].beforeExpandSize, CCs[chars[1]].beforeExpandSize)
-		# CCs[chars[0]].add(CCs[chars[1]].components)
-		# CCs[chars[1]].add(CCs[chars[0]].components)
-		# CCs[chars[0]].connectedCC.append(chars[1])
-		# CCs[chars[1]].connectedCC.append(chars[0])
 		passSizeTest = sizeRation <= 2
 	elif len(chars) == 1:
 		passSizeTest = True
@@ -121,7 +93,7 @@ def passTest(img, isBG, idCC, x, y, max_size_ratio, max_curvature_ratio):
 
 def testConditions(img, max_size_ratio, max_curvature_ratio):
 	expansionCands = []
-	# # 1st scan
+	# 1st scan
 	isBG = np.equal(img, [[BG_COLOR]*img.shape[1]] * img.shape[0])
 	idCC = img - np.array([[BG_COLOR]*img.shape[1]] * img.shape[0]) - 1
 	for i in range(img.shape[0]):
@@ -155,7 +127,8 @@ def countExpandableCC(img, max_distance_ratio):
 	expandable_CC = 0
 	i = 0
 	for cc in CCs:
-		if len(cc.connectedCC) == 2 or iterationCnt > math.floor(max_distance_ratio  * cc.beforeExpandSize):
+		# print(cc.beforeExpandSize, max_distance_ratio * cc.beforeExpandSize, iterationCnt)
+		if len(cc.connectedCC) == 2 or iterationCnt+1 > math.floor(max_distance_ratio  * cc.beforeExpandSize):
 			cc.expandable = False
 		else:
 			expandable_CC += 1
@@ -163,7 +136,6 @@ def countExpandableCC(img, max_distance_ratio):
 
 
 def DFS(img, isBG, x, y, curCC, CC_id):
-	# CC_id start from 1
 
 	stack = [(x, y)]	
 	
@@ -172,7 +144,7 @@ def DFS(img, isBG, x, y, curCC, CC_id):
 
 		img[x][y] = BG_COLOR+CC_id
 		isBG[x][y] = True
-		curCC.add([(x, y)])
+		curCC.add((x, y))
 
 		for mv in moves:
 			u, v = x + mv[0], y + mv[1]
@@ -181,17 +153,18 @@ def DFS(img, isBG, x, y, curCC, CC_id):
 				if not isBG[u][v]:
 					stack.append((u, v))
 
-def text_strings(img, max_size_ratio = 2.0, max_curvature_ratio = 0.3, max_distance_ratio = 0.05):
+def text_strings(img, max_size_ratio = 2.0, max_curvature_ratio = 0.3, max_distance_ratio = 0.18):
 	"""
 		Input: binary image
 	 	Output: images of strings
 	"""
-	# cv2.imshow('black and white', img)
-	# cv2.waitKey()
-	# return
 	global BG_COLOR
 	global FG_COLOR
 
+	# cv2.imshow("xxx", img)
+	# cv2.waitKey()
+
+	# return
 	test_img = img.copy()
 	test_img = test_img.astype('int64')
 	visited = []
@@ -208,14 +181,10 @@ def text_strings(img, max_size_ratio = 2.0, max_curvature_ratio = 0.3, max_dista
 			if not isBG[i][j]:
 				new_CC = CC()
 				DFS(test_img, isBG, i, j, new_CC, len(CCs)+1)
-				# finalWords.append(len(CCs))
 				new_CC.expandable = True
 				new_CC.resize()
 				CCs.append(new_CC)
 	
-	# for cc in CCs:
-	# 	cv2.imshow("Char", img[cc.leftmost:cc.rightmost+1, cc.upmost:cc.downmost+1])
-	# 	cv2.waitKey()
 	global iterationCnt
 	global expandable_CC
 
@@ -223,10 +192,10 @@ def text_strings(img, max_size_ratio = 2.0, max_curvature_ratio = 0.3, max_dista
 	expandable_CC = 0
 
 	while True:
-		testConditions(test_img, max_size_ratio, max_curvature_ratio)
-		countExpandableCC(test_img, max_distance_ratio)
 		iterationCnt += 1
 		print(iterationCnt)
+		testConditions(test_img, max_size_ratio, max_curvature_ratio)
+		countExpandableCC(test_img, max_distance_ratio)
 		if expandable_CC == 0:
 			break
 
@@ -252,31 +221,39 @@ def text_strings(img, max_size_ratio = 2.0, max_curvature_ratio = 0.3, max_dista
 	# 			img[i][j] = BG_COLOR
 	# 		else:
 	# 			img[i][j] = FG_COLOR
-
-	
+	# print("DONE")
+	# cv2.imwrite("xxx.png", img)			
 	# cv2.imshow("xXx", np.hstack([bkimg, img]))
 	# cv2.waitKey()
+
+	
 	word = "word"
 	i = 0
 	for cc in CCs:
-		cv2.imwrite("word" + str(i) + ".png", img[cc.leftmost:cc.rightmost+1, cc.upmost:cc.downmost+1])
-		i += 1
-		# cv2.imshow("Char", img[cc.leftmost:cc.rightmost+1, cc.upmost:cc.downmost+1])
-		# cv2.waitKey()
+		# cv2.imwrite("word" + str(i) + ".png", img[cc.leftmost:cc.rightmost+1, cc.upmost:cc.downmost+1])
+		# i += 1
+		cv2.imshow("Char", img[cc.leftmost:cc.rightmost+1, cc.upmost:cc.downmost+1])
+		cv2.waitKey()
 
 	
 
 
 image = cv2.imread(args["image"])
-quant = color_quantization(args, image)
+quant = CQ.quantize(args["clusters"], image)
 
-gray_img = cv2.cvtColor(quant, cv2.COLOR_BGR2GRAY)
-(thresh, bw_img) = cv2.threshold(gray_img, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+gray_img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
+blur = cv2.GaussianBlur(gray_img,(5,5),0)
+bw_img = cv2.adaptiveThreshold(blur,255,cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY,3,3)
+
+
+# gray_img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+# (thresh, bw_img) = cv2.threshold(gray_img, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+# cv2.imwrite('xxx.png', bw_img)
 # kernel = np.ones((1, 2), np.uint8)
 # new_img = cv2.erode(bw_img, kernel, iterations = 1)
 # np.savetxt('tet.txt', bw_img, delimiter=',', fmt='%d')
-
+# cv2.imwrite('mapbw.png', bw_img)
 text_strings(bw_img)
 # cv2.imshow("image", np.hstack([bw_img]))
 # cv2.waitKey(0)
