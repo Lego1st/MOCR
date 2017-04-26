@@ -1,13 +1,18 @@
-import keras
-from keras.datasets import mnist
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Flatten
 from keras.layers import Conv2D, MaxPooling2D
 from keras import backend as K
+import keras
 import pickle
-batch_size = 100
-num_classes = 2
-epochs = 20
+import argparse
+ap = argparse.ArgumentParser()
+ap.add_argument("-ba", required = True, type = int, help = "Batch Size")
+ap.add_argument("-cl", required = True, type = int, help = "Number of classes")
+ap.add_argument("-ep", required = True, type = int, help = "Number of epochs")
+args = ap.parse_args()
+batch_size = args.ba
+num_classes = args.cl
+epochs = args.ep
 
 # input image dimensions
 img_rows, img_cols = 30, 30
@@ -63,4 +68,4 @@ print('Test loss:', score[0])
 print('Test accuracy:', score[1])
 
 model.save('my_model.h5')  # creates a HDF5 file 'my_model.h5'
-del model  # deletes the existing model
+
