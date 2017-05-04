@@ -59,10 +59,10 @@ def extract(im):
 			contours[i] = contours[i-1]
 			contours[i-1] = temp
 
-	for i, cnt in enumerate(contours):
-		if cv2.contourArea(cnt) > 1:
-			new_contours.append(cnt)	
-
+	# for i, cnt in enumerate(contours):
+	# 	if cv2.contourArea(cnt) > 1:
+	# 		new_contours.append(cnt)	
+	new_contours = contours
 	del_idx = []
 	# for i, cnt in enumerate(new_contours):
 	# 	if i not in del_idx:
@@ -74,7 +74,7 @@ def extract(im):
 		x,y,w,h = cv2.boundingRect(cnt)
 		for j, cnt1 in enumerate(new_contours[(i+1):]):
 			x1,y1,w1,h1 = cv2.boundingRect(cnt1)
-			if x <= x1 and x+w >= x1 + w1:
+			if x <= x1 and x+w > x1:
 				del_idx.append(j+i+1)
 	
 	for i, cnt in enumerate(new_contours):
