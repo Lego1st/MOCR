@@ -1,0 +1,1 @@
+run the following command "python preprocessing.py -i {pathToImage} -c {N.O.ClusteringColor}"
