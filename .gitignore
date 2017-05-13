@@ -1,1 +1,5 @@
 /images/*
+/result/*
+/text/*
+/nontext/*
+*.pyc
