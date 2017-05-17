@@ -17,7 +17,7 @@ im = cv2.imread(args.i)
 reload(sys)
 sys.setdefaultencoding("utf-8")
 
-model = load_model('model1.h5')
+model = load_model('model2.h5')
 dictionary = pickle.load(open('dictionary.pickle', "rb"))
 projection = project(im)
 chars = segment_single(im, projection)
