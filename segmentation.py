@@ -69,10 +69,18 @@ def segment_touched(im, projection):
 
 def segment_single(im, projection):
 	candidates = score_single(projection)
-	if 0 not in candidates and projection[0] > 0:
-		candidates = [0] + candidates
-	if im.shape[1]-1 not in candidates and projection[-1] > 0:
-		candidates = candidates + [im.shape[1]-1]
+	leftFit, rightFit = None, None
+	for i, col in enumerate(projection):
+		if col > 0 and leftFit != None:
+			leftFit = i
+		if projection[im.shape[1]-1-i] > 0 and rightFit != None:
+			rightFit = im.shape[1]-1-i
+
+	if leftFit not in candidates:
+		candidates = [leftFit] + candidates
+	if rightFit not in candidates:
+		candidates = candidates + [rightFit]
+	print candidates
 	chars = []
 	for i in range(len(candidates)-1):
 		temp = im[:,candidates[i]:candidates[i+1]+1]
