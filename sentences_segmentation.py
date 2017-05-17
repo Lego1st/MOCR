@@ -29,7 +29,7 @@ def DFS(isBG, _x, _y):
 def findLines(image):
 	res = []
 	# img = image.copy()
-	isBG = np.equal(image, [[0]*image.shape[1]]*image.shape[0])
+	isBG = np.equal(image, [[255]*image.shape[1]]*image.shape[0])
 	for i in range(image.shape[0]):
 		for j in range(image.shape[1]):
 			if not isBG[i][j]:
