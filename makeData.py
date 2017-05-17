@@ -1,24 +1,17 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import os
 import sys
 from scipy import ndimage
-from six.moves import cPickle as pickle
+import pickle
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("-root", help="root folder")
-parser.add_argument("-train_fol", help="train folder")
-parser.add_argument("-test_fol", help="test folder")
+parser.add_argument("-data", help="data folder")
 parser.add_argument("-size", help="image size")
-parser.add_argument("-train", help="train size")
-parser.add_argument("-valid", help="valid size")
-parser.add_argument("-test", help="test size")
-parser.add_argument("-min_train", help="min number of training per class")
-parser.add_argument("-min_test", help="min number of testing per class")
-
 
 args = parser.parse_args()
-
+reload(sys)
+sys.setdefaultencoding("utf-8")
 data_root = args.root # Change me to store data elsewhere 
 def get_fols(root):
 	l = os.listdir(root)
@@ -26,16 +19,16 @@ def get_fols(root):
 	return l
 
 def sort(l):
-  l.sort(key=lambda x: int(x.split('/')[-1][1:]))
-train_folders = get_fols(args.train_fol)
-test_folders =get_fols(args.test_fol)
+  l.sort(key=lambda x: x.split('/')[-1])
+
+train_folders = get_fols(args.data)
 sort(train_folders)
-sort(test_folders)
-# print "train_folders: ", train_folders
-# print "test_folders: ", test_folders
+print( "train_folders: ", train_folders)
 image_size = int(args.size)  # Pixel width and height.
 pixel_depth = 255.0  # Number of levels per pixel.
-def load_letter(folder, min_num_images):
+total = 0
+
+def load_letter(folder):
   """Load the data for a single letter label."""
   image_files = os.listdir(folder) 
   dataset = np.ndarray(shape=(len(image_files), image_size, image_size),
@@ -55,16 +48,13 @@ def load_letter(folder, min_num_images):
       print('Could not read:', image_file, ':', e, '- it\'s ok, skipping.')
     
   dataset = dataset[0:num_images, :, :]
-  if num_images < min_num_images:
-    raise Exception('Many fewer images than expected: %d < %d' %
-                    (num_images, min_num_images))
-    
+
   print('Full dataset tensor:', dataset.shape)
   print('Mean:', np.mean(dataset))
   print('Standard deviation:', np.std(dataset))
   return dataset
         
-def maybe_pickle(data_folders, min_num_images_per_class, force=False):
+def maybe_pickle(data_folders, force=False):
   dataset_names = []
   for folder in data_folders:
     set_filename = folder + '.pickle'
@@ -72,9 +62,13 @@ def maybe_pickle(data_folders, min_num_images_per_class, force=False):
     if os.path.exists(set_filename) and not force:
       # You may override by setting force=True.
       print('%s already present - Skipping pickling.' % set_filename)
+      # with open(set_filename, 'rb') as f:
+        # dataset = pickle.load(f)
+        # global total
+        # total += dataset.shape[0]
     else:
       print('Pickling %s.' % set_filename)
-      dataset = load_letter(folder, min_num_images_per_class)
+      dataset = load_letter(folder)
       try:
         with open(set_filename, 'wb') as f:
           pickle.dump(dataset, f, pickle.HIGHEST_PROTOCOL)
@@ -83,11 +77,9 @@ def maybe_pickle(data_folders, min_num_images_per_class, force=False):
   
   return dataset_names
 
-train_datasets = maybe_pickle(train_folders, int(args.min_train))
-test_datasets = maybe_pickle(test_folders, int(args.min_test))
+train_datasets = maybe_pickle(train_folders)
 
-print "train_datasets: ", train_datasets
-print "test_datasets: ", test_datasets
+# print "train_datasets: ", train_datasets
 
 def make_arrays(nb_rows, img_size):
   if nb_rows:
@@ -96,85 +88,95 @@ def make_arrays(nb_rows, img_size):
   else:
     dataset, labels = None, None
   return dataset, labels
-
-def merge_datasets(pickle_files, train_size, valid_size=0):
+total = 2000000
+def merge_datasets(pickle_files, number_of_samples):
   num_classes = len(pickle_files)
-  train_dataset, train_labels = make_arrays(train_size, image_size)
-  valid_dataset, valid_labels = make_arrays(valid_size, image_size)
-  # tsize_per_class = train_size // num_classes
-  # vsize_per_class = valid_size // num_classes
-    
-  # start_v, start_t = 0, 0
-  # end_v, end_t = vsize_per_class, tsize_per_class
-  # end_l = vsize_per_class+tsize_per_class
-  start_t = 0
-  end_t = 0
+  train_dataset, train_labels = make_arrays(number_of_samples, image_size)
+  valid_dataset, valid_labels = make_arrays(number_of_samples, image_size)
+  test_dataset, test_labels = make_arrays(number_of_samples, image_size)
+  start_t, end_t = 0, 0
+  start_v, end_v = 0, 0
+  start_test, end_test = 0, 0
+  t = 0
   for label, pickle_file in enumerate(pickle_files):       
     try:
       with open(pickle_file, 'rb') as f:
         letter_set = pickle.load(f)
         # let's shuffle the letters to have random validation and training set
-        # np.random.shuffle(letter_set)
-        # if valid_dataset is not None:
-        #   valid_letter = letter_set[:vsize_per_class, :, :]
-        #   valid_dataset[start_v:end_v, :, :] = valid_letter
-        #   valid_labels[start_v:end_v] = label
-        #   start_v += vsize_per_class
-        #   end_v += vsize_per_class
-                    
-        # train_letter = letter_set[vsize_per_class:end_l, :, :]
-        end_t += letter_set.shape[0]
-        # train_dataset[start_t:end_t, :, :] = train_letter
-        train_dataset[start_t:end_t, :, :] = letter_set
+        np.random.shuffle(letter_set)                    
+        l = letter_set.shape[0]
+        t += l 
+        end_t += l*6/10
+        end_v += l*2/10
+        end_test += l - l*6/10 - l*2/10
+        print( "Size: ", t)
+        print( "Length: ", l)
+        print( start_t, end_t)
+        print( start_v, end_v)
+        print( start_test, end_test)
+        train_dataset[start_t:end_t, :, :] = letter_set[0:l*6/10]
         train_labels[start_t:end_t] = label
+        valid_dataset[start_v:end_v, :, :] = letter_set[l*6/10:l*6/10+l*2/10]
+        valid_labels[start_v:end_v] = label
+        test_dataset[start_test:end_test, :, :] = letter_set[l*6/10+l*2/10:]
+        test_labels[start_test:end_test] = label
         start_t = end_t
-        # start_t += tsize_per_class
-        # end_t += tsize_per_class
+        start_v = end_v
+        start_test = end_test
     except Exception as e:
       print('Unable to process data from', pickle_file, ':', e)
       raise
     
-  return valid_dataset, valid_labels, train_dataset, train_labels
+  return train_dataset[:end_t,:,:] , train_labels[:end_t] , valid_dataset[:end_v, :, :], valid_labels[:end_v], test_dataset[:end_test, :, :], test_labels[:end_test]
             
-            
-train_size = int(args.train)
-valid_size = int(args.valid)
-test_size = int(args.test)
-
-valid_dataset, valid_labels, train_dataset, train_labels = merge_datasets(
-  train_datasets, train_size, valid_size)
-_, _, test_dataset, test_labels = merge_datasets(test_datasets, test_size)
+train_dataset, train_labels, valid_dataset, valid_labels, test_dataset, test_labels= merge_datasets(
+  train_datasets, total)
 
 print('Training:', train_dataset.shape, train_labels.shape)
-if valid_size != 0:
-	print('Validation:', valid_dataset.shape, valid_labels.shape)
+print('Validation:', valid_dataset.shape, valid_labels.shape)
 print('Testing:', test_dataset.shape, test_labels.shape)
+
 def randomize(dataset, labels):
   permutation = np.random.permutation(labels.shape[0])
   shuffled_dataset = dataset[permutation,:,:]
   shuffled_labels = labels[permutation]
   return shuffled_dataset, shuffled_labels
+
 train_dataset, train_labels = randomize(train_dataset, train_labels)
+valid_dataset, valid_labels = randomize(valid_dataset, valid_labels)
 test_dataset, test_labels = randomize(test_dataset, test_labels)
-if valid_size != 0:
-	valid_dataset, valid_labels = randomize(valid_dataset, valid_labels)
-pickle_file = os.path.join(data_root, 'mocr.pickle')
+
 
 try:
-  f = open(pickle_file, 'wb')
-  save = {
-    'train_dataset': train_dataset,
-    'train_labels': train_labels,
-    'valid_dataset': valid_dataset,
-    'valid_labels': valid_labels,
-    'test_dataset': test_dataset,
-    'test_labels': test_labels,
-    }
-  pickle.dump(save, f, pickle.HIGHEST_PROTOCOL)
-  f.close()
+  pickle_train_file = os.path.join(data_root, 'train.npy')
+  pickle_valid_file = os.path.join(data_root, 'valid.npy')
+  pickle_test_file = os.path.join(data_root, 'test.npy')
+  pickle_train_label = os.path.join(data_root, 'train_labels.npy')
+  pickle_valid_label = os.path.join(data_root, 'valid_labels.npy')
+  pickle_test_label = os.path.join(data_root, 'test_labels.npy')
+  np.save(pickle_train_file, train_dataset)
+  np.save(pickle_valid_file, valid_dataset)
+  np.save(pickle_test_file, test_dataset)
+  np.save(pickle_train_label, train_labels)
+  np.save(pickle_valid_label, valid_labels)
+  np.save(pickle_test_label, test_labels)
 except Exception as e:
-  print('Unable to save data to', pickle_file, ':', e)
+  print('Unable to save data to:', e)
   raise
 
-statinfo = os.stat(pickle_file)
-print('Compressed pickle size:', statinfo.st_size)  
+
+# try:
+#   pickle_test_file = os.path.join(data_root, 'mocr_test.npy')
+#   f = open(pickle_test_file, 'wb')
+#   save = {
+#     'test_dataset': test_dataset,
+#     'test_labels': test_labels,
+#     }
+#   pickle.dump(save, f, pickle.HIGHEST_PROTOCOL)
+#   f.close()
+# except Exception as e:
+#   print('Unable to save data to', pickle_test_file, ':', e)
+#   raise
+
+# statinfo = os.stat(pickle_file)
+# print('Compressed pickle size:', statinfo.st_size)  
