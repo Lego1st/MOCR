@@ -31,6 +31,8 @@ def DFS(isBG, _x, _y, im):
 	return res[0], res[1], res[2], res[3], nodes
 
 def find_characters(image):
+	# cv2.imshow('word', image)
+	# cv2.waitKey()
 	res = []
 	chars = []
 	isBG = np.equal(image, [[255]*image.shape[1]]*image.shape[0])
@@ -56,8 +58,10 @@ def find_characters(image):
 				# print "Catch ", i, i+1
 				top = res[i][1]
 				bot = res[i][3]
+				right = res[i][2]
 				top = min(top, res[i+1][1])
 				bot = max(bot, res[i+1][3])
+				right = max(right, res[i+1][2])
 				# print "Top: %d , Bottom: %d" % (top, bot)
 				first = i
 				last = i+1
@@ -74,7 +78,7 @@ def find_characters(image):
 					i+=1
 				# print "Fist: ", res[first][:4], " Last: ", res[last][:4]
 
-				img = image[top:bot+1, res[first][0] : res[last][2]+1].copy()
+				img = image[top:bot+1, res[first][0] : right+1].copy()
 				for idx in range(img.shape[0]):
 					for j in range(img.shape[1]):
 						img[idx][j] = 255

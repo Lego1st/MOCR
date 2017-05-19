@@ -163,7 +163,7 @@ def DFS(img, isBG, x, y, curCC, CC_id):
 				if not isBG[u][v]:
 					stack.append((u, v))
 
-def text_strings(output_name, image, img, max_size_ratio = 2.0, max_curvature_ratio = 0.3, max_distance_ratio = 0.15):
+def text_strings(output_name, image, img, max_size_ratio = 2.0, max_curvature_ratio = 0.3, max_distance_ratio = 0.2):
 	"""
 		Input: binary image
 	 	Output: images of strings
@@ -238,11 +238,16 @@ def text_strings(output_name, image, img, max_size_ratio = 2.0, max_curvature_ra
 		
 	i = 1
 	init_image = image.copy()
+	words = []
 	for cc in CCs:
 		# if (cc.rightmost-cc.leftmost+1)*(cc.downmost-cc.upmost+1) <= 100:
 		# 	continue
-		cv2.imwrite("result/" + output_name + str(i) + ".png", init_image[cc.leftmost:cc.rightmost+1, cc.upmost:cc.downmost+1])
+		temp = init_image[cc.leftmost:cc.rightmost+1, cc.upmost:cc.downmost+1]
+		cv2.imwrite("result/" + output_name + str(i) + ".png", temp)
 		i += 1
+		words.append(temp)
+
+	return words
 		# cv2.rectangle(init_image,(cc.upmost, cc.leftmost),(cc.downmost, cc.rightmost),(0,255,0),2)
 		# cv2.imshow("Char", img[cc.leftmost:cc.rightmost+1, cc.upmost:cc.downmost+1])
 		# cv2.waitKey()
