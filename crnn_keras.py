@@ -24,20 +24,8 @@ ap.add_argument("-lr", required = True, type = float, help = "Learning rate")
 args = ap.parse_args()
 
 root = '/home/long/aeh16/train'
-words = os.listdir(root)
-words_dir = [os.path.join(root, f) for f in words]
-samples = []
-for w in words_dir:
-    samples.extend([os.path.join(w, f) for f in os.listdir(w)])
+dataset = get_dataset(root)
 
-labels = []
-for i, w in enumerate(words):
-    labels.extend([w]* len(os.listdir(words_dir[i])))
-
-labels = [text_to_labels(l, forward_mapping) for l in labels]
-dataset = zip(samples, labels)
-
-print "%d training samples" % len(samples)
 batch_size = args.ba
 num_classes = args.cl
 epochs = args.ep
@@ -65,12 +53,7 @@ for ep in range(epochs):
     print "Epoch %d: %f" % (ep, (float)(sum(loss_batch))/(len(loss_batch)))
     M.model.save_weights('crnn_keras.h5')
 
-    r = np.random.randint(0, len(samples))
-    for b in get_batches_crnn(zip([samples[r]], [labels[r]]), 1):
-        p = M.predict_step([b[0], b[1], b[3], True])[0]
-        print b[2]
-    print "True: ", labels_to_text(labels[r])
-    print "Predict: ", labels_to_text(p[0])
+    predict(1, M, dataset = dataset)
 
 # for i in range(10):
 #     r = np.random.randint(0, len(samples))
