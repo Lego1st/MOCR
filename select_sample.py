@@ -72,8 +72,8 @@ def select(img, fldr):
 		# if the 'r' key is pressed, reset the cropping region
 		if key == ord("r"):
 			image = rot_img(clone.copy(), rot)
-			refPt.clear()
-	 
+			del refPt[:]
+
 		# if the 'c' key is pressed, break from the loop
 		elif key == ord("c"):
 			if len(refPt) == 2:

@@ -71,7 +71,7 @@ def stringCurvatureTest(img, i, j, max_curvature_ratio):
 
 def passTest(img, isBG, idCC, x, y, max_size_ratio, max_curvature_ratio):
 	passStringCurvatureTest = stringCurvatureTest(img, x, y, max_curvature_ratio)
-	passConnectivityTest = False
+	passConnectivityTest = True
 	passSizeTest = False
 	passExpandabilityTest = False
 	chars = []
@@ -86,7 +86,7 @@ def passTest(img, isBG, idCC, x, y, max_size_ratio, max_curvature_ratio):
 					chars.append(idCC[u][v])
 					if CCs[chars[-1]].expandable:
 						passExpandabilityTest = True
-	passConnectivityTest = len(chars) >= 1 and len(chars) <= 2
+	# passConnectivityTest = len(chars) >= 1 and len(chars) <= 2
 	if(len(chars) > 0):
 		CCs[chars[-1]].add((x, y))
 	if len(chars) == 2:
@@ -163,7 +163,7 @@ def DFS(img, isBG, x, y, curCC, CC_id):
 				if not isBG[u][v]:
 					stack.append((u, v))
 
-def text_strings(output_name, image, img, max_size_ratio = 2.0, max_curvature_ratio = 0.3, max_distance_ratio = 0.2):
+def text_strings(output_name, image, img, max_size_ratio = 2.0, max_curvature_ratio = 0.3, max_distance_ratio = 0.15):
 	"""
 		Input: binary image
 	 	Output: images of strings

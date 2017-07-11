@@ -41,7 +41,7 @@ def find_characters(image):
 		for j in range(image.shape[1]):
 			if not isBG[i][j]:
 				temp = DFS(isBG, i, j, image)
-				if len(temp[-1]) > image.shape[0]*image.shape[1]/1000:
+				if len(temp[-1]) > image.shape[0]*image.shape[1]/10000:
 					res.append(temp)
 
 	res.sort(key=lambda x: x[0])
@@ -54,7 +54,9 @@ def find_characters(image):
 		# cv2.waitKey()
 		catch = []
 		if res[i+1][0] <= res[i][2]:
-			if res[i+1][3] <= res[i][1]:
+			"The next cc is within the vision"
+			if res[i+1][3] <= res[i][1] * 1.5 or res[i+1][1] >= res[i][3] * 0.5:
+				"The next cc is a sign"
 				# print "Catch ", i, i+1
 				top = res[i][1]
 				bot = res[i][3]
@@ -68,10 +70,11 @@ def find_characters(image):
 				catch.extend(res[i][-1])
 				catch.extend(res[i+1][-1])
 				i+=2
-				while res[i][0] <= res[first][2] and res[i][3] <= res[first][1]:
+				while res[i][0] <= res[first][2] and (res[i][3] <= res[first][1] *1.5 or res[i][1] >= res[first][3] * 0.5):
 					# print "Dau at ", i
 					top = min(top, res[i][1])
 					bot = max(bot, res[i][3])
+					right = max(right, res[i][2])
 					# print "Top: %d , Bottom: %d" % (top, bot)
 					last = i
 					catch.extend(res[i][-1])
@@ -91,6 +94,7 @@ def find_characters(image):
 				# cv2.imshow('Dau', img)
 				# cv2.waitKey()
 			else:
+				"The next cc is a letter"
 				img = image[res[i][1]:res[i][3]+1, res[i][0]: res[i][2]+1].copy()
 				for idx in range(img.shape[0]):
 					for j in range(img.shape[1]):
@@ -107,6 +111,7 @@ def find_characters(image):
 				# cv2.imshow('touched' + str(i), img)
 				# cv2.waitKey()
 		else:
+			"Can't see anything"
 			img = image[res[i][1]:res[i][3]+1, res[i][0]: res[i][2]+1].copy()
 			for pixel in res[i][-1]:
 					image[pixel[0]][pixel[1]] = 255

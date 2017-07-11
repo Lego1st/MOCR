@@ -5,7 +5,7 @@ import sys
 import cv2
 import argparse
 from getFeatures import getFeatures
-from six.moves import cPickle as pickle
+from six.moves import cPickle as pickle 
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-root", help="root folder")

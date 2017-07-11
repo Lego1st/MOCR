@@ -100,5 +100,6 @@ def preprocess(image, clusters):
 		clr_img = bw_img[y: yh, x: xh]
 		i += 1
 		words.extend(WE.text_strings(str(i) + "-", clr_img, img_line, max_distance_ratio = 0.2))
+		# words.append(img_line)
 
 	return words

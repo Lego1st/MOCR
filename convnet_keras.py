@@ -40,6 +40,9 @@ x_valid = x_valid.reshape(-1,30,30,1)
 y_valid = np.load('valid_labels.npy')
 # y_valid = np.concatenate((y_v, y_valid), axis=0)
 
+x_train = np.concatenate((x_train, x_valid), axis=0)
+y_train = np.concatenate((y_train, y_valid), axis=0)
+
 x_test = np.load('test.npy')
 x_test = x_test.reshape(-1,30,30,1)
 # x_test = np.concatenate((x_t, x_test), axis=0)
@@ -48,13 +51,13 @@ y_test = np.load('test_labels.npy')
 
 input_shape = (img_rows, img_cols, img_channel)
 print(x_train.shape[0], 'train samples')
-print(x_valid.shape[0], 'valid samples')
+# print(x_valid.shape[0], 'valid samples')
 print(x_test.shape[0], 'test samples')
 
 
 # # convert class vectors to binary class matrices
 y_train = keras.utils.to_categorical(y_train, num_classes)
-y_valid = keras.utils.to_categorical(y_valid, num_classes)
+# y_valid = keras.utils.to_categorical(y_valid, num_classes)
 y_test = keras.utils.to_categorical(y_test, num_classes)
 
 # model = Sequential()
@@ -81,15 +84,15 @@ y_test = keras.utils.to_categorical(y_test, num_classes)
 # model.compile(loss=keras.losses.categorical_crossentropy,
 #               optimizer=keras.optimizers.Adadelta(),
 #               metrics=['accuracy'])
-model = load_model('model2.h5')
-model.fit(x_train, y_train,
-          batch_size=batch_size,
-          epochs=epochs,
-          verbose=1,
-          validation_data=(x_valid, y_valid))
-score = model.evaluate(x_test, y_test, verbose=0)
-print('Test loss:', score[0])
-print('Test accuracy:', score[1])
+# model = load_model('model2.h5')
+# model.fit(x_train, y_train,
+#           batch_size=batch_size,
+#           epochs=epochs,
+#           verbose=1,
+#           validation_data=(x_test, y_test))
+# score = model.evaluate(x_test, y_test, verbose=0)
+# print('Test loss:', score[0])
+# print('Test accuracy:', score[1])
 
-model.save('model2.h5') 
+# model.save('model2.h5') 
 

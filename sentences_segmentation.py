@@ -29,7 +29,7 @@ def DFS(isBG, _x, _y):
 def findLines(image):
 	res = []
 	# img = image.copy()
-	isBG = np.equal(image, [[255]*image.shape[1]]*image.shape[0])
+	isBG = np.equal(image, [[0]*image.shape[1]]*image.shape[0])
 	for i in range(image.shape[0]):
 		for j in range(image.shape[1]):
 			if not isBG[i][j]:
@@ -75,7 +75,7 @@ def segmentize(thresh, space_size = 15):
 	       # cv2.waitKey()
 
 	       x, y, u, v = contours[i]
-	       if u < x or v < y or u-x < 10 or v-y < 10:
+	       if u < x or v < y or u-x < 5 or v-y < 5:
 	       	continue
 	       # cv2.rectangle(thresh,(x, y), (u, v), (0, 255, 0), 2)
 	       res.append(contours[i])

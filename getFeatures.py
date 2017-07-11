@@ -3,7 +3,7 @@ import cv2
 def getFeatures(im, ratio):
   def getPe(side):
     pe = []
-    avg = []
+    avg = [] 
     for i in range(30):
       for j in range(30):
         if side == "left" and im[i][j] == 0:
